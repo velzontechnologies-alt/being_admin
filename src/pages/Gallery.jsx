@@ -272,7 +272,6 @@ const Gallery = () => {
                 onClose={() => setIsDetailOpen(false)}
                 title="Gallery Image Preview"
                 width="max-w-md"
-                footer={<Button onClick={() => setIsDetailOpen(false)}>Close</Button>}
             >
                 {selectedImage && (
                     <div className="flex justify-center py-2">

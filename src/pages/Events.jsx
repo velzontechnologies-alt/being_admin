@@ -462,7 +462,6 @@ const Events = () => {
                 onClose={() => setIsDetailOpen(false)}
                 title="Event Preview"
                 width="max-w-md"
-                footer={<Button onClick={() => setIsDetailOpen(false)}>Close</Button>}
             >
                 {selectedEvent && (
                     <div className="flex justify-center py-2">

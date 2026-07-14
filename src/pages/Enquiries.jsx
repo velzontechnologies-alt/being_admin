@@ -39,11 +39,7 @@ const Enquiries = () => {
         setIsDetailOpen(true);
     };
 
-    const handleStatusChange = (id, newStatus) => {
-        // Optimistic local update — no backend status update route available
-        setEnquiries(prev => prev.map(e => e.id === id ? { ...e, status: newStatus } : e));
-        showAlert({ title: 'Status Updated', text: `Enquiry marked as ${newStatus}`, icon: 'success' });
-    };
+
 
     const handleDelete = async (id) => {
         const confirmed = await confirmDialog({
@@ -66,6 +62,15 @@ const Enquiries = () => {
         (enq.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (enq.enquiryAbout || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const sortedEnquiries = [...filteredEnquiries].sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+        const idA = a.id || a._id || '';
+        const idB = b.id || b._id || '';
+        return idB.localeCompare(idA);
+    });
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 text-left">
@@ -104,9 +109,9 @@ const Enquiries = () => {
                         <Skeleton className="h-10 w-full" />
                     </div>
                 </Card>
-            ) : filteredEnquiries.length > 0 ? (
-                <Table headers={['Submission Date', 'Name', 'Email Address', 'Interest', 'Status (Changeable)', 'Actions']}>
-                    {filteredEnquiries.map((enq) => (
+            ) : sortedEnquiries.length > 0 ? (
+                <Table headers={['Submission Date', 'Name', 'Email Address', 'Interest', 'Actions']}>
+                    {sortedEnquiries.map((enq) => (
                         <TableRow key={enq.id}>
                             <TableCell>{formatDate(enq.createdAt)}</TableCell>
                             <TableCell className="font-bold text-slate-800">{enq.name}</TableCell>
@@ -115,23 +120,6 @@ const Enquiries = () => {
                                 <span className="bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full text-xs text-slate-600 font-medium block truncate max-w-[180px]">
                                     {enq.enquiryAbout}
                                 </span>
-                            </TableCell>
-                            <TableCell>
-                                <select
-                                    value={enq.status || 'New'}
-                                    onChange={(e) => handleStatusChange(enq.id, e.target.value)}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#B3925B] ${
-                                        enq.status === 'New'
-                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                            : enq.status === 'In Progress'
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-green-50 text-green-700 border-green-200'
-                                    }`}
-                                >
-                                    <option value="New">New</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Responded">Responded</option>
-                                </select>
                             </TableCell>
                             <TableCell>
                                 <div className="flex gap-2">
@@ -167,7 +155,6 @@ const Enquiries = () => {
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
                 title="Enquiry Detail"
-                footer={<Button onClick={() => setIsDetailOpen(false)}>Close</Button>}
             >
                 {selectedEnquiry && (
                     <div className="space-y-6 text-left">
@@ -193,34 +180,11 @@ const Enquiries = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 border-b border-slate-100 pb-4 items-center">
-                            <div>
-                                <h4 className="text-xs font-bold uppercase text-slate-400 mb-1">Programme/Interest Topic</h4>
-                                <span className="bg-primary-50 border border-primary-100 px-3 py-1 rounded-full text-xs font-bold text-[#B3925B] uppercase block w-fit">
-                                    {selectedEnquiry.enquiryAbout}
-                                </span>
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-bold uppercase text-slate-400 mb-1.5">Change Status</h4>
-                                <select
-                                    value={selectedEnquiry.status || 'New'}
-                                    onChange={(e) => {
-                                        handleStatusChange(selectedEnquiry.id, e.target.value);
-                                        setSelectedEnquiry(prev => ({ ...prev, status: e.target.value }));
-                                    }}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#B3925B] ${
-                                        selectedEnquiry.status === 'New'
-                                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                            : selectedEnquiry.status === 'In Progress'
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-green-50 text-green-700 border-green-200'
-                                    }`}
-                                >
-                                    <option value="New">New</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Responded">Responded</option>
-                                </select>
-                            </div>
+                        <div className="border-b border-slate-100 pb-4">
+                            <h4 className="text-xs font-bold uppercase text-slate-400 mb-1">Programme/Interest Topic</h4>
+                            <span className="bg-primary-50 border border-primary-100 px-3 py-1 rounded-full text-xs font-bold text-[#B3925B] uppercase block w-fit">
+                                {selectedEnquiry.enquiryAbout}
+                            </span>
                         </div>
 
                         <div>

@@ -421,7 +421,6 @@ const Programs = () => {
                 onClose={() => setIsDetailOpen(false)}
                 title="Program Preview"
                 width="max-w-md"
-                footer={<Button onClick={() => setIsDetailOpen(false)}>Close</Button>}
             >
                 {selectedProgram && (
                     <div className="flex justify-center py-2">
