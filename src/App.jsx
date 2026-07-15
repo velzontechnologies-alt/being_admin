@@ -15,6 +15,8 @@ const SiteImages = lazy(() => import('./pages/SiteImages'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const Admins = lazy(() => import('./pages/Admins'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Reviews = lazy(() => import('./pages/Reviews'));
+const Reservations = lazy(() => import('./pages/Reservations'));
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
             <Route path="programs" element={<Programs />} />
             <Route path="events" element={<Events />} />
             <Route path="gallery" element={<Gallery />} />
+            <Route path="reviews" element={<Reviews />} />
+            <Route path="reservations" element={<Reservations />} />
             <Route path="enquiries" element={<Enquiries />} />
             <Route path="site-images" element={<SiteImages />} />
             <Route path="admins" element={<Admins />} />

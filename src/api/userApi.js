@@ -4,7 +4,7 @@
  *
  * Routes:
  *   GET  /user/list
- *   POST /user/create   name, email, phone_number, description
+ *   POST /user/create   name, email, phone_number, description, support_with[], interested_in[]
  *   POST /user/delete   Token, _id
  *   POST /user/details  Token, _id
  */
@@ -19,8 +19,24 @@ export const userApi = {
         return extractList(res.data);
     },
 
-    create: async ({ name, email, phone_number, description }) => {
-        const res = await apiBase.post('/user/create', { name, email, phone_number, description });
+    /**
+     * Create a new user/enquiry.
+     * @param {string} name
+     * @param {string} email
+     * @param {string} phone_number
+     * @param {string} description
+     * @param {string[]} support_with   - enum values from userSchema
+     * @param {string[]} interested_in  - enum values from userSchema
+     */
+    create: async ({ name, email, phone_number, description, support_with = [], interested_in = [] }) => {
+        const res = await apiBase.post('/user/create', {
+            name,
+            email,
+            phone_number,
+            description,
+            support_with,
+            interested_in
+        });
         return res.data;
     },
 

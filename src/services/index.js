@@ -12,3 +12,4 @@ export { imageService, programService } from './imageService';
 export { galleryService } from './galleryService';
 export { enquiryService } from './enquiryService';
 export { authService }    from './authService';
+export { reviewService }   from './reviewService';

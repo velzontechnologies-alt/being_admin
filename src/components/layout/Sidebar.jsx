@@ -11,7 +11,9 @@ import {
     Mail,
     BookOpen,
     Grid,
-    Users
+    Users,
+    Star,
+    Ticket
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,8 +25,10 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
         { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
         { label: 'Programs', icon: BookOpen, path: '/programs' },
         { label: 'Events', icon: Calendar, path: '/events' },
-        { label: 'Gallery', icon: Grid, path: '/gallery' },
+        { label: 'Reservations', icon: Ticket, path: '/reservations' },
+        { label: 'Reviews', icon: Star, path: '/reviews' },
         { label: 'Form Enquiries', icon: Mail, path: '/enquiries' },
+        { label: 'Gallery', icon: Grid, path: '/gallery' },
         { label: 'Admins', icon: Users, path: '/admins' },
     ];
 
@@ -49,11 +53,11 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                 <div className="flex flex-col h-full overflow-y-auto no-scrollbar">
                     {/* Logo Area */}
                     <div className="flex items-center h-16 w-full flex-shrink-0 border-b border-slate-100 px-6">
-                        <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-bold text-xl leading-none">BB</span>
+                        <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 flex items-center justify-center flex-shrink-0 bg-white">
+                            <img src="/being_&_beyond_logo.jpg" alt="Being & Beyond Logo" className="w-full h-full object-cover" />
                         </div>
                         <span className="ml-3 font-bold text-slate-800 text-lg whitespace-nowrap font-serif">
-                            Being & Beyond
+                            Being <span className="text-primary-500 font-sans">&</span> Beyond
                         </span>
                     </div>
 

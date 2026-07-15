@@ -52,14 +52,49 @@ export const imageService = {
 // ─── Programs ─────────────────────────────────────────────────────────────────
 
 /** Normalise a raw image record into a UI-ready program object. */
-const normaliseProgram = (p) => ({
-    id:          p._id  || p.id,
-    title:       p.card_title       || '',
-    outcome:     p.card_description || '',
-    description: p.card_description || '',
-    img:         p.card_image || p.image || p.file || p.url || '',
-    status:      p.card_status !== undefined ? Boolean(p.card_status) : true
-});
+const normaliseProgram = (p) => {
+    const idealList = p.ideal ? p.ideal.split('\n').map(item => item.trim()).filter(Boolean) : [];
+    const gainList = p.what_you_gain ? p.what_you_gain.split('\n').map(item => item.trim()).filter(Boolean) : [];
+    const suitableList = p.suitable ? p.suitable.split('\n').map(item => item.trim()).filter(Boolean) : [];
+
+    const id = p._id || p.id || '';
+    const titleLower = (p.card_title || '').toLowerCase();
+
+    // Identify the program category based on its title or original ID
+    const isPersonal = id.includes('personal') || titleLower.includes('personal') || titleLower.includes('clarity');
+    const isSpeaking = id.includes('speaking') || titleLower.includes('speaking') || titleLower.includes('keynote');
+    const isAlignment = id.includes('align') || titleLower.includes('alignment');
+    const isYouth = id.includes('youth') || titleLower.includes('youth') || titleLower.includes('young');
+    const isWomens = id.includes('women') || titleLower.includes('women') || titleLower.includes('growth & renewal');
+    const isCorporate = id.includes('corporate') || titleLower.includes('corporate') || titleLower.includes('group') || titleLower.includes('workshop');
+
+    // Clean fallbacks so if it is none of these categories, we display standard idealFor and gains
+    const isOther = !isPersonal && !isSpeaking && !isAlignment && !isYouth && !isWomens && !isCorporate;
+
+    return {
+        id:          p._id  || p.id,
+        title:       p.card_title       || '',
+        outcome:     p.tagline          || '',
+        description: p.card_description || '',
+        ideal:       p.ideal            || '',
+        what_you_gain: p.what_you_gain  || '',
+        suitable:    p.suitable         || '',
+        tagline:     p.tagline          || '',
+        key_out_come: p.key_out_come     || '',
+        
+        idealFor:    (isPersonal || isSpeaking || isOther) ? idealList : [],
+        discoveries: isAlignment ? idealList : [],
+        focusAreas:  isWomens ? idealList : [],
+        
+        gains:       (isPersonal || isYouth || isWomens || isCorporate || isSpeaking || isOther) ? gainList : [],
+        topics:      isCorporate ? gainList : [],
+        suitableFor: (isYouth || isCorporate) ? suitableList : [],
+        
+        keyOutcome:  p.key_out_come     || '',
+        img:         p.card_image || p.image || p.file || p.url || '',
+        status:      p.card_status !== undefined ? Boolean(p.card_status) : true
+    };
+};
 
 export const programService = {
 
@@ -75,8 +110,13 @@ export const programService = {
         return imageApi.create({
             file:             data.img instanceof File ? data.img : undefined,
             card_title:       data.title,
-            card_description: data.outcome || data.description,
-            card_status:      data.status !== undefined ? data.status : true
+            card_description: data.description,
+            card_status:      data.status !== undefined ? data.status : true,
+            ideal:            Array.isArray(data.idealFor) ? data.idealFor.join('\n') : (data.ideal || ''),
+            what_you_gain:    Array.isArray(data.gains) ? data.gains.join('\n') : (data.what_you_gain || ''),
+            suitable:         Array.isArray(data.suitableFor) ? data.suitableFor.join('\n') : (data.suitable || ''),
+            tagline:          data.outcome || data.tagline || '',
+            key_out_come:     data.keyOutcome || data.key_out_come || ''
         });
     },
 
@@ -86,8 +126,13 @@ export const programService = {
             _id:              data._id || data.id,
             file:             data.img instanceof File ? data.img : undefined,
             card_title:       data.title,
-            card_description: data.outcome || data.description,
-            card_status:      data.status !== undefined ? data.status : true
+            card_description: data.description,
+            card_status:      data.status !== undefined ? data.status : true,
+            ideal:            Array.isArray(data.idealFor) ? data.idealFor.join('\n') : (data.ideal || ''),
+            what_you_gain:    Array.isArray(data.gains) ? data.gains.join('\n') : (data.what_you_gain || ''),
+            suitable:         Array.isArray(data.suitableFor) ? data.suitableFor.join('\n') : (data.suitable || ''),
+            tagline:          data.outcome || data.tagline || '',
+            key_out_come:     data.keyOutcome || data.key_out_come || ''
         });
     },
 

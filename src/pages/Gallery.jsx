@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Image as ImageIcon, Search, Eye } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Search, Eye, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import Button from '../components/ui/Button';
@@ -123,15 +123,25 @@ const Gallery = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 font-serif">Sanctuary Gallery</h1>
                     <p className="text-slate-500 text-sm">Upload, preview, and remove images displayed in the site gallery</p>
                 </div>
-                <Button onClick={handleOpenModal} className="gap-2 shrink-0">
-                    <Plus className="h-5 w-5" /> Upload to Gallery
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button 
+                        variant="secondary" 
+                        onClick={fetchGallery} 
+                        isLoading={loading}
+                        className="gap-2"
+                    >
+                        {!loading && <RefreshCw className="h-4 w-4 text-[#B3925B]" />}
+                        Refresh
+                    </Button>
+                    <Button onClick={handleOpenModal} className="gap-2">
+                        <Plus className="h-5 w-5" /> Upload to Gallery
+                    </Button>
+                </div>
             </div>
 
             {/* Toolbar */}

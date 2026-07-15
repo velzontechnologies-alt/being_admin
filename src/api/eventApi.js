@@ -3,11 +3,15 @@
  * No business logic here — only API transport.
  *
  * Routes:
- *   GET  /event/list
- *   POST /event/create   Token, title, file, description, start_date, end_date, start_time, end_time, status, location
- *   POST /event/update   Token, _id, title, file, description, start_date, end_date, start_time, end_time, status, location
- *   POST /event/delete   Token, _id
- *   POST /event/details  Token, _id
+ *   GET  /event/list             Token (admin authenticated)
+ *   GET  /event/status/list      Public — returns only active events (no auth required)
+ *   POST /event/create           Token, title, file, description, start_date, end_date, start_time, end_time, status, location
+ *   POST /event/update           Token, _id, title, file, description, start_date, end_date, start_time, end_time, status, location
+ *   POST /event/delete           Token, _id
+ *   POST /event/details          Token, _id
+ *
+ *  NOTE: `location` is sent to the backend — ensure the Event schema includes `location: { type: String }`
+ *  NOTE: Token is injected automatically by axiosInstance.js interceptor; never add it manually here.
  */
 
 import { apiBase } from '../services/axiosInstance';
@@ -17,6 +21,12 @@ export const eventApi = {
 
     list: async () => {
         const res = await apiBase.get('/event/list');
+        return extractList(res.data);
+    },
+
+    /** Public route — returns only events with status: true (no Token required). */
+    statusList: async () => {
+        const res = await apiBase.get('/event/status/list');
         return extractList(res.data);
     },
 
@@ -54,8 +64,9 @@ export const eventApi = {
     },
 
     updateImage: async ({ _id, file }) => {
+        // Uses 'file' key — consistent with create/update
         const fd = buildFormData({ _id });
-        if (file instanceof File) fd.append('image', file);
+        if (file instanceof File) fd.append('file', file);
         const res = await apiBase.post('/event/update/image', fd, MULTIPART);
         return res.data;
     },
@@ -67,6 +78,31 @@ export const eventApi = {
 
     details: async (id) => {
         const res = await apiBase.post('/event/details', { _id: id });
+        return res.data;
+    },
+
+    book: async ({ event_id, first_name, last_name, email, phone_number, country, occupation, description }) => {
+        const res = await apiBase.post('/event/book', {
+            event_id,
+            first_name,
+            last_name,
+            email,
+            phone_number,
+            country,
+            occupation,
+            description
+        });
+        return res.data;
+    },
+
+    bookingList: async () => {
+        const res = await apiBase.get('/event/book/list');
+        console.log('bookingList res.data:', res.data);
+        return extractList(res.data);
+    },
+
+    bookingDelete: async (id) => {
+        const res = await apiBase.post('/eventbook/delete', { _id: id });
         return res.data;
     }
 };

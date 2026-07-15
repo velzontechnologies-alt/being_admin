@@ -83,9 +83,9 @@ export const authService = {
         return response.data;
     },
 
-    // POST /admin/update
+    // POST /admin/update — fields must match adminSchema: name, phone_number, description
     updateAdmin: async (name, phone_number, description, password) => {
-        const payload = { Name: name, phone_number, description };
+        const payload = { name, phone_number, description };
         if (password) {
             payload.password = password;
         }

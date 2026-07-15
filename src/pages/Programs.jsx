@@ -5,7 +5,8 @@ import {
     Trash2,
     BookOpen,
     Search,
-    Eye
+    Eye,
+    RefreshCw
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
@@ -28,7 +29,11 @@ const Programs = () => {
         outcome: '',
         description: '',
         status: true,
-        img: null
+        img: null,
+        ideal: '',
+        what_you_gain: '',
+        suitable: '',
+        key_out_come: ''
     });
     const [previewUrl, setPreviewUrl] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -54,6 +59,17 @@ const Programs = () => {
                 title: p.title || '',
                 outcome: p.outcome || '',
                 description: p.description || '',
+                ideal: p.ideal || '',
+                what_you_gain: p.what_you_gain || '',
+                suitable: p.suitable || '',
+                key_out_come: p.key_out_come || '',
+                idealFor: p.idealFor || [],
+                discoveries: p.discoveries || [],
+                focusAreas: p.focusAreas || [],
+                gains: p.gains || [],
+                topics: p.topics || [],
+                suitableFor: p.suitableFor || [],
+                keyOutcome: p.keyOutcome || '',
                 img: p.img || p.main_image || '',
                 status: p.status !== undefined ? Boolean(p.status) : true
             })));
@@ -79,12 +95,26 @@ const Programs = () => {
                 outcome: program.outcome || '',
                 description: program.description || '',
                 status: program.status !== undefined ? Boolean(program.status) : true,
-                img: null
+                img: null,
+                ideal: program.ideal || (Array.isArray(program.idealFor) ? program.idealFor.join('\n') : ''),
+                what_you_gain: program.what_you_gain || (Array.isArray(program.gains) ? program.gains.join('\n') : ''),
+                suitable: program.suitable || (Array.isArray(program.suitableFor) ? program.suitableFor.join('\n') : ''),
+                key_out_come: program.key_out_come || program.keyOutcome || ''
             });
             setPreviewUrl(program.img || null);
         } else {
             setCurrentProgram(null);
-            setFormData({ title: '', outcome: '', description: '', status: true, img: null });
+            setFormData({
+                title: '',
+                outcome: '',
+                description: '',
+                status: true,
+                img: null,
+                ideal: '',
+                what_you_gain: '',
+                suitable: '',
+                key_out_come: ''
+            });
             setPreviewUrl(null);
         }
         setIsModalOpen(true);
@@ -95,7 +125,7 @@ const Programs = () => {
         const newStatus = !Boolean(prog.status);
         setPrograms(prev => prev.map(p => p.id === prog.id ? { ...p, status: newStatus } : p));
         try {
-            await programService.update({ _id: prog.id, id: prog.id, title: prog.title, outcome: prog.outcome, description: prog.description, status: newStatus });
+            await programService.update({ ...prog, status: newStatus });
             showAlert({ title: 'Status Updated', text: `Program marked as ${newStatus ? 'Published' : 'Hidden'}`, icon: 'success' });
         } catch (err) {
             setPrograms(prev => prev.map(p => p.id === prog.id ? { ...p, status: !newStatus } : p));
@@ -144,7 +174,15 @@ const Programs = () => {
             outcome: formData.outcome,
             description: formData.description,
             status: formData.status,
-            img: formData.img
+            img: formData.img,
+            ideal: formData.ideal,
+            what_you_gain: formData.what_you_gain,
+            suitable: formData.suitable,
+            key_out_come: formData.key_out_come,
+            idealFor: formData.ideal.split('\n').map(l => l.trim()).filter(Boolean),
+            gains: formData.what_you_gain.split('\n').map(l => l.trim()).filter(Boolean),
+            suitableFor: formData.suitable.split('\n').map(l => l.trim()).filter(Boolean),
+            keyOutcome: formData.key_out_come
         };
 
         try {
@@ -187,9 +225,20 @@ const Programs = () => {
                     <h1 className="text-2xl font-bold text-slate-900">Programs Management</h1>
                     <p className="text-slate-500 text-sm">Create, edit, and organize core website coaching programs</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} className="gap-2 shrink-0">
-                    <Plus className="h-5 w-5" /> Add New Program
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button 
+                        variant="secondary" 
+                        onClick={fetchPrograms} 
+                        isLoading={loading}
+                        className="gap-2"
+                    >
+                        {!loading && <RefreshCw className="h-4 w-4 text-[#B3925B]" />}
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpenModal()} className="gap-2">
+                        <Plus className="h-5 w-5" /> Add New Program
+                    </Button>
+                </div>
             </div>
 
             {/* Toolbar */}
@@ -390,6 +439,39 @@ const Programs = () => {
                                 required
                             />
 
+                            <div className="border-t border-slate-100 pt-4 mt-6">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Additional Details (One bullet per line)</h4>
+                                <div className="space-y-4">
+                                    <TextArea
+                                        label="Ideal For"
+                                        placeholder="e.g. Individuals feeling stuck or lost&#10;Career transitions"
+                                        value={formData.ideal}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, ideal: e.target.value }))}
+                                        rows={3}
+                                    />
+                                    <TextArea
+                                        label="What You May Gain"
+                                        placeholder="e.g. Greater clarity on your goals&#10;Increased confidence"
+                                        value={formData.what_you_gain}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, what_you_gain: e.target.value }))}
+                                        rows={3}
+                                    />
+                                    <TextArea
+                                        label="Suitable For"
+                                        placeholder="e.g. School students of all stages&#10;Young working adults"
+                                        value={formData.suitable}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, suitable: e.target.value }))}
+                                        rows={3}
+                                    />
+                                    <Input
+                                        label="Key Outcome Statement"
+                                        placeholder="e.g. When you are aligned, you stop forcing life and start flowing..."
+                                        value={formData.key_out_come}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, key_out_come: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+
                             {/* Status Toggle */}
                             <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
                                 <div>
@@ -420,41 +502,109 @@ const Programs = () => {
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
                 title="Program Preview"
-                width="max-w-md"
+                className="max-w-xl bg-[#FDFBF7]"
             >
                 {selectedProgram && (
-                    <div className="flex justify-center py-2">
-                        <div className="w-full overflow-hidden border-none shadow-lg rounded-[2rem] border border-slate-100 bg-[#FAF9F5] text-left flex flex-col">
-                            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 border-b border-slate-100">
-                                {selectedProgram.img ? (
-                                    <img src={selectedProgram.img} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                        <BookOpen className="h-12 w-12 opacity-20" />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-6 md:p-8 flex flex-col justify-between flex-grow">
-                                <div className="space-y-3">
-                                    <span className="text-[9px] uppercase tracking-[0.2em] text-[#B3925B] font-bold block">
-                                        {selectedProgram.outcome || 'PROGRAM OUTCOME'}
-                                    </span>
-                                    <div>
-                                        <h3 className="font-serif text-2xl text-slate-800 font-normal">
-                                            {selectedProgram.title}
-                                        </h3>
-                                        <div className="w-12 h-[1px] bg-[#B3925B]/70 mt-2" />
-                                    </div>
-                                    <p className="text-xs font-light text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                        {selectedProgram.description}
-                                    </p>
+                    <div className="space-y-6 text-left font-sans text-[#1C1C1C]">
+                        {/* Header */}
+                        <div>
+                            <span className="text-[9px] uppercase tracking-[0.25em] text-[#C5A880] font-bold block mb-1">
+                                Offering Detail
+                            </span>
+                            <h3 className="font-serif text-3xl text-[#1C1C1C]">{selectedProgram.title}</h3>
+                            <p className="text-xs text-[#C5A880] font-serif italic mt-1">{selectedProgram.outcome}</p>
+                        </div>
+
+                        {/* Image */}
+                        <div className="aspect-[16/9] w-full overflow-hidden rounded-xl border border-[#F0EAE1]">
+                            {selectedProgram.img ? (
+                                <img src={selectedProgram.img} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
+                                    <BookOpen className="h-12 w-12 opacity-20" />
                                 </div>
-                                <div className="pt-6">
-                                    <button type="button" disabled className="w-full bg-[#1E242B] text-white text-[10px] uppercase tracking-[0.2em] py-3.5 px-4 font-semibold rounded-sm opacity-80 cursor-not-allowed">
-                                        Enquire Now
-                                    </button>
+                            )}
+                        </div>
+
+                        {/* Description */}
+                        <div className="space-y-4">
+                            <p className="text-xs leading-relaxed font-light text-[#1C1C1C]/85 bg-white/40 p-4 border border-[#F0EAE1] rounded-xl whitespace-pre-wrap">
+                                {selectedProgram.description}
+                            </p>
+
+                            {/* Ideal For */}
+                            {selectedProgram.idealFor && selectedProgram.idealFor.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold">Ideal For:</h4>
+                                    <ul className="space-y-1.5 text-xs font-light text-[#1C1C1C]/85 pl-4 list-disc">
+                                        {selectedProgram.idealFor.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    </ul>
                                 </div>
-                            </div>
+                            )}
+
+                            {/* Discoveries */}
+                            {selectedProgram.discoveries && selectedProgram.discoveries.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold">What You Will Discover:</h4>
+                                    <ul className="space-y-1.5 text-xs font-light text-[#1C1C1C]/85 pl-4 list-disc">
+                                        {selectedProgram.discoveries.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Gains */}
+                            {selectedProgram.gains && selectedProgram.gains.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold">What You May Gain:</h4>
+                                    <ul className="space-y-1.5 text-xs font-light text-[#1C1C1C]/85 pl-4 list-disc">
+                                        {selectedProgram.gains.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Focus Areas */}
+                            {selectedProgram.focusAreas && selectedProgram.focusAreas.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold">Focus Areas:</h4>
+                                    <ul className="space-y-1.5 text-xs font-light text-[#1C1C1C]/85 pl-4 list-disc">
+                                        {selectedProgram.focusAreas.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Suitable For */}
+                            {selectedProgram.suitableFor && selectedProgram.suitableFor.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold">Suitable For:</h4>
+                                    <ul className="space-y-1.5 text-xs font-light text-[#1C1C1C]/85 pl-4 list-disc">
+                                        {selectedProgram.suitableFor.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Topics */}
+                            {selectedProgram.topics && selectedProgram.topics.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold">Popular Workshop Topics:</h4>
+                                    <ul className="space-y-1.5 text-xs font-light text-[#1C1C1C]/85 pl-4 list-disc">
+                                        {selectedProgram.topics.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Key Outcome */}
+                            {selectedProgram.keyOutcome && (
+                                <div className="p-3 bg-[#C5A880]/5 border border-[#C5A880]/25 rounded-lg text-xs italic text-center text-[#1C1C1C]/90 font-serif">
+                                    Key Outcome: {selectedProgram.keyOutcome}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* CTA Footer */}
+                        <div className="pt-4 border-t border-[#F0EAE1] flex items-center justify-end">
+                            <button type="button" disabled className="bg-[#1E242B] text-white text-[10px] uppercase tracking-[0.2em] py-3.5 px-8 font-semibold rounded-sm opacity-80 cursor-not-allowed">
+                                Enquire for This Container
+                            </button>
                         </div>
                     </div>
                 )}

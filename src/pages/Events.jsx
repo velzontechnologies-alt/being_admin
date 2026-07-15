@@ -7,7 +7,8 @@ import {
     Search,
     Clock,
     MapPin,
-    Eye
+    Eye,
+    RefreshCw
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
@@ -193,9 +194,20 @@ const Events = () => {
                     <h1 className="text-2xl font-bold text-slate-900">Events Management</h1>
                     <p className="text-slate-500 text-sm">Create, edit, and organize upcoming events</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} className="gap-2 shrink-0">
-                    <Plus className="h-5 w-5" /> Add New Event
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button 
+                        variant="secondary" 
+                        onClick={fetchEvents} 
+                        isLoading={loading}
+                        className="gap-2"
+                    >
+                        {!loading && <RefreshCw className="h-4 w-4 text-[#B3925B]" />}
+                        Refresh
+                    </Button>
+                    <Button onClick={() => handleOpenModal()} className="gap-2">
+                        <Plus className="h-5 w-5" /> Add New Event
+                    </Button>
+                </div>
             </div>
 
             {/* Toolbar */}

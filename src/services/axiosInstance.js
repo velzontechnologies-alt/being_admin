@@ -23,11 +23,21 @@ const addAuthInterceptor = (instance) => {
                 config.headers['Token'] = token;
                 config.headers['Authorization'] = `Bearer ${token}`;
 
-                // If the body is FormData, also append Token as a field
-                // so backends that read from body (not headers) still get it
+                // Inject token into request body (for both FormData and JSON objects)
                 if (config.data instanceof FormData) {
                     if (!config.data.has('Token')) {
                         config.data.append('Token', token);
+                    }
+                    if (!config.data.has('token')) {
+                        config.data.append('token', token);
+                    }
+                } else if (config.data && typeof config.data === 'object' && !(config.data instanceof ArrayBuffer || config.data instanceof Blob)) {
+                    // For standard JSON payloads, inject if not already present
+                    if (config.data.Token === undefined) {
+                        config.data.Token = token;
+                    }
+                    if (config.data.token === undefined) {
+                        config.data.token = token;
                     }
                 }
             }

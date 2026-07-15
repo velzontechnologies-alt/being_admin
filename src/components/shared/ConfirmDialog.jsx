@@ -9,7 +9,7 @@ export const confirmDialog = async ({ title, text, icon = 'warning', confirmText
         text: text || "You won't be able to revert this!",
         icon: icon,
         showCancelButton: true,
-        confirmButtonColor: '#0ea5e9', // primary-600
+        confirmButtonColor: '#B3925B', // primary-500
         cancelButtonColor: '#64748b', // secondary-500
         confirmButtonText: confirmText,
         cancelButtonText: cancelText,

@@ -36,11 +36,11 @@ const Login = () => {
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 shadow-lg shadow-primary-200 mb-4">
-                        <span className="text-white text-2xl font-bold">BB</span>
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden border border-slate-200/50 shadow-md mb-4 bg-white">
+                        <img src="/being_&_beyond_logo.jpg" alt="Being & Beyond Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-3xl font-bold text-slate-900 font-serif">Admin Login</h1>
-                    <p className="text-slate-500 mt-2">Manage your Being & Beyond website with ease</p>
+                    <p className="text-slate-500 mt-2">Manage your Being <span className="text-primary-500 font-sans">&</span> Beyond website with ease</p>
                 </div>
 
                 <Card className="border-none shadow-xl shadow-slate-200/50">

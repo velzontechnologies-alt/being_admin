@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Mail, Phone, Eye, EyeOff, Users, Settings } from 'lucide-react';
+import { Plus, Trash2, Mail, Phone, Eye, EyeOff, Users, Settings, RefreshCw } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
 import { Card, CardContent } from '../components/ui/Card';
@@ -110,13 +110,24 @@ const Admins = () => {
                     <h2 className="text-2xl font-bold text-slate-900 font-serif">Administrators</h2>
                     <p className="text-slate-500 text-sm mt-0.5">Manage user access and details for the Being & Beyond CMS.</p>
                 </div>
-                <Button
-                    onClick={() => setIsCreateOpen(true)}
-                    className="bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm transition-all"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Admin
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button 
+                        variant="secondary" 
+                        onClick={fetchAdmins} 
+                        isLoading={loadingAdmins}
+                        className="gap-2 font-bold"
+                    >
+                        {!loadingAdmins && <RefreshCw className="h-4 w-4 text-[#B3925B]" />}
+                        Refresh
+                    </Button>
+                    <Button
+                        onClick={() => setIsCreateOpen(true)}
+                        className="bg-primary-600 hover:bg-primary-700 text-white font-medium shadow-sm transition-all"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Admin
+                    </Button>
+                </div>
             </div>
 
             {/* Connection Error Warning */}

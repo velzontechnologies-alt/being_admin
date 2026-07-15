@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Images, RefreshCcw } from 'lucide-react';
+import { Images, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import ImageUploader from '../components/shared/ImageUploader';
@@ -59,9 +59,20 @@ const SiteImages = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900">Site Images</h1>
-                <p className="text-slate-500 text-sm">Update static images across different website sections</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Site Images</h1>
+                    <p className="text-slate-500 text-sm">Update static images across different website sections</p>
+                </div>
+                <Button 
+                    variant="secondary" 
+                    onClick={loadImages} 
+                    className="gap-2 shrink-0 font-bold"
+                    isLoading={fetching}
+                >
+                    {!fetching && <RefreshCw className="h-4 w-4 text-[#B3925B]" />}
+                    Refresh
+                </Button>
             </div>
 
             {fetching ? (
