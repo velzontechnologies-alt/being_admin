@@ -28,7 +28,17 @@ export const imageApi = {
     },
 
     create: async ({ file, card_title, card_description, card_status = true, ideal, what_you_gain, suitable, tagline, key_out_come }) => {
-        const fd = buildFormData({ card_title, card_description, card_status, ideal, what_you_gain, suitable, tagline, key_out_come });
+        const fd = buildFormData({ 
+            card_title, 
+            card_description, 
+            description: card_description, 
+            card_status, 
+            ideal, 
+            what_you_gain, 
+            suitable, 
+            tagline, 
+            key_out_come 
+        });
         if (file instanceof File) fd.append('file', file);
         const res = await apiBase.post('/program/create', fd, MULTIPART);
         return res.data;
@@ -38,7 +48,7 @@ export const imageApi = {
         const fd = buildFormData({
             _id,
             ...(card_title       !== undefined && { card_title }),
-            ...(card_description !== undefined && { card_description }),
+            ...(card_description !== undefined && { card_description, description: card_description }),
             ...(card_status      !== undefined && { card_status }),
             ...(ideal            !== undefined && { ideal }),
             ...(what_you_gain    !== undefined && { what_you_gain }),

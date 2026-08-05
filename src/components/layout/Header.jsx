@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Button from '../ui/Button';
 
-const Header = ({ toggleSidebar, isMobile }) => {
+const Header = ({ toggleSidebar }) => {
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -26,16 +26,14 @@ const Header = ({ toggleSidebar, isMobile }) => {
     return (
         <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 sticky top-0 z-30">
             <div className="flex items-center gap-4">
-                {isMobile && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={toggleSidebar}
-                        className="p-2 h-auto text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 shadow-sm"
-                    >
-                        <Menu className="h-6 w-6" />
-                    </Button>
-                )}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleSidebar}
+                    className="p-2 h-auto text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 shadow-sm lg:hidden"
+                >
+                    <Menu className="h-6 w-6" />
+                </Button>
                 <div className="flex items-center gap-2 text-sm text-slate-400">
                     <span className="hidden sm:inline">Admin</span>
                     <ChevronRight className="h-4 w-4 hidden sm:inline" />

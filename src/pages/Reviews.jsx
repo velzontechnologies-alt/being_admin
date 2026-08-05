@@ -121,7 +121,7 @@ const Reviews = () => {
                         Refresh
                     </Button>
                     <Button onClick={handleOpenModal} className="gap-2">
-                        <Plus className="h-5 w-5" /> Add New Review
+                        <Plus className="h-5 w-5" /> Add Newcd
                     </Button>
                 </div>
             </div>

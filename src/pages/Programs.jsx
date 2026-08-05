@@ -184,6 +184,7 @@ const Programs = () => {
             suitableFor: formData.suitable.split('\n').map(l => l.trim()).filter(Boolean),
             keyOutcome: formData.key_out_come
         };
+        
 
         try {
             if (currentProgram) {
@@ -193,12 +194,15 @@ const Programs = () => {
                     _id: currentProgram.id
                 });
                 showAlert({ title: 'Updated!', text: 'Program details updated successfully', icon: 'success' });
+                
                 fetchPrograms();
             } else {
                 await programService.create(submissionData);
                 showAlert({ title: 'Created!', text: 'New program added successfully', icon: 'success' });
                 fetchPrograms();
             }
+        console.log('Program updated:', submissionData);
+
             setIsModalOpen(false);
         } catch (error) {
             showAlert({ title: 'Error', text: 'Failed to save program', icon: 'error' });
@@ -236,7 +240,7 @@ const Programs = () => {
                         Refresh
                     </Button>
                     <Button onClick={() => handleOpenModal()} className="gap-2">
-                        <Plus className="h-5 w-5" /> Add New Program
+                        <Plus className="h-5 w-5" /> Add New
                     </Button>
                 </div>
             </div>
@@ -357,7 +361,7 @@ const Programs = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={currentProgram ? 'Edit Program' : 'Add New Program'}
+                title={currentProgram ? 'Edit Program' : 'Add New '}
                 width="max-w-4xl"
                 footer={
                     <>

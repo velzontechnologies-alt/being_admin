@@ -22,6 +22,7 @@ export const eventApi = {
     list: async () => {
         const res = await apiBase.get('/event/list');
         return extractList(res.data);
+
     },
 
     /** Public route — returns only events with status: true (no Token required). */
@@ -32,14 +33,14 @@ export const eventApi = {
 
     create: async (payload) => {
         const fd = buildFormData({
-            title:       payload.title,
+            title: payload.title,
             description: payload.description,
-            start_date:  payload.start_date,
-            end_date:    payload.end_date || payload.start_date,
-            start_time:  payload.start_time,
-            end_time:    payload.end_time,
-            status:      payload.status !== undefined ? payload.status : true,
-            location:    payload.location || ''
+            start_date: payload.start_date,
+            end_date: payload.end_date || payload.start_date,
+            start_time: payload.start_time,
+            end_time: payload.end_time,
+            status: payload.status !== undefined ? payload.status : true,
+            location: payload.location || ''
         });
         if (payload.file instanceof File) fd.append('file', payload.file);
         const res = await apiBase.post('/event/create', fd, MULTIPART);
@@ -48,15 +49,15 @@ export const eventApi = {
 
     update: async (payload) => {
         const fd = buildFormData({
-            _id:         payload._id,
-            title:       payload.title,
+            _id: payload._id,
+            title: payload.title,
             description: payload.description,
-            start_date:  payload.start_date,
-            end_date:    payload.end_date || payload.start_date,
-            start_time:  payload.start_time,
-            end_time:    payload.end_time,
-            status:      payload.status !== undefined ? payload.status : true,
-            location:    payload.location || ''
+            start_date: payload.start_date,
+            end_date: payload.end_date || payload.start_date,
+            start_time: payload.start_time,
+            end_time: payload.end_time,
+            status: payload.status !== undefined ? payload.status : true,
+            location: payload.location || ''
         });
         if (payload.file instanceof File) fd.append('file', payload.file);
         const res = await apiBase.post('/event/update', fd, MULTIPART);

@@ -205,7 +205,7 @@ const Events = () => {
                         Refresh
                     </Button>
                     <Button onClick={() => handleOpenModal()} className="gap-2">
-                        <Plus className="h-5 w-5" /> Add New Event
+                        <Plus className="h-5 w-5" /> Add New
                     </Button>
                 </div>
             </div>
@@ -331,7 +331,7 @@ const Events = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={currentEvent ? 'Edit Event' : 'Add New Event'}
+                title={currentEvent ? 'Edit Event' : 'Add New '}
                 width="max-w-4xl"
                 footer={
                     <>

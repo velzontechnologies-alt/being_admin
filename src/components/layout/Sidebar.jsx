@@ -18,7 +18,7 @@ import {
 import { cn } from '../../utils/cn';
 import { useAuth } from '../../hooks/useAuth';
 
-const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
+const Sidebar = ({ isOpen, toggleSidebar }) => {
     const { logout } = useAuth();
 
     const menuItems = [
@@ -35,16 +35,23 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
     const sidebarClasses = cn(
         'fixed inset-y-0 left-0 z-40 bg-white border-r border-slate-100 transition-all duration-300 ease-in-out',
         'w-64',
-        isMobile && !isOpen && '-translate-x-full',
-        isMobile && isOpen && 'translate-x-0'
+        'lg:translate-x-0',
+        !isOpen && '-translate-x-full',
+        isOpen && 'translate-x-0'
     );
+
+    const handleNavItemClick = () => {
+        if (window.innerWidth < 1024) {
+            toggleSidebar();
+        }
+    };
 
     return (
         <>
             {/* Mobile Backdrop */}
-            {isMobile && isOpen && (
+            {isOpen && (
                 <div
-                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 transition-opacity"
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 transition-opacity lg:hidden"
                     onClick={toggleSidebar}
                 />
             )}
@@ -67,6 +74,7 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }) => {
                             <NavLink
                                 key={item.label}
                                 to={item.path}
+                                onClick={handleNavItemClick}
                                 className={({ isActive }) => cn(
                                     'flex items-center gap-3 px-3 py-2 rounded-lg transition-all',
                                     isActive
