@@ -103,7 +103,7 @@ export const eventApi = {
     },
 
     bookingDelete: async (id) => {
-        const res = await apiBase.post('/eventbook/delete', { _id: id });
+        const res = await apiBase.post('/event/book/delete', { _id: id });
         return res.data;
     }
 };

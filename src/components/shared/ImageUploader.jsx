@@ -54,10 +54,22 @@ const CropModal = ({ src, fileName, aspect, onConfirm, onCancel }) => {
     const imgRef = useRef(null);
     const [crop, setCrop]           = useState();
     const [completedCrop, setCompletedCrop] = useState(null);
+    const [currentAspect, setCurrentAspect] = useState(aspect);
 
     const onImageLoad = useCallback((e) => {
         const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
-        setCrop(buildInitialCrop(w, h, aspect));
+        let finalAspect = aspect;
+        if (aspect === 'dynamic') {
+            if (h > w) {
+                finalAspect = 3 / 4; // Portrait
+            } else if (w > h) {
+                finalAspect = 4 / 3; // Landscape
+            } else {
+                finalAspect = 1; // Square
+            }
+            setCurrentAspect(finalAspect);
+        }
+        setCrop(buildInitialCrop(w, h, finalAspect));
     }, [aspect]);
 
     const handleConfirm = async () => {
@@ -97,7 +109,7 @@ const CropModal = ({ src, fileName, aspect, onConfirm, onCancel }) => {
                         crop={crop}
                         onChange={(_, pct) => setCrop(pct)}
                         onComplete={(c) => setCompletedCrop(c)}
-                        aspect={aspect}
+                        aspect={currentAspect === 'dynamic' ? undefined : currentAspect}
                         minWidth={50}
                         minHeight={50}
                         keepSelection
@@ -116,7 +128,7 @@ const CropModal = ({ src, fileName, aspect, onConfirm, onCancel }) => {
                 {/* Hint */}
                 <p className="text-center text-xs text-slate-400 py-2 bg-slate-50 border-t border-slate-100">
                     Drag the handles to adjust the crop area
-                    {aspect ? ` · ${aspect === 16/10 ? '16:10' : aspect === 1 ? '1:1' : aspect === 16/9 ? '16:9' : aspect.toFixed(2)} ratio` : ''}
+                    {currentAspect && currentAspect !== 'dynamic' ? ` · ${currentAspect === 16/10 ? '16:10' : currentAspect === 1 ? '1:1' : currentAspect === 16/9 ? '16:9' : currentAspect === 4/3 ? '4:3' : currentAspect === 3/4 ? '3:4' : currentAspect.toFixed(2)} ratio` : ''}
                 </p>
 
                 {/* Footer */}
@@ -167,20 +179,47 @@ const ImageUploader = ({
     const [rawSrc, setRawSrc]           = useState(null);  // original file src for crop
     const [pendingFile, setPendingFile] = useState(null);  // original File object
     const [cropOpen, setCropOpen]       = useState(false);
+    const [previewAspect, setPreviewAspect] = useState(
+        aspectRatio === 'dynamic' ? 'aspect-[4/3]' : aspectRatio
+    );
 
     // Sync when parent asynchronously provides the image URL
     useEffect(() => {
         setPreview(initialImage || null);
     }, [initialImage]);
 
+    // Update dynamic preview aspect ratio
+    useEffect(() => {
+        if (aspectRatio !== 'dynamic') {
+            setPreviewAspect(aspectRatio);
+            return;
+        }
+        if (!preview) {
+            setPreviewAspect('aspect-[4/3]');
+            return;
+        }
+        const img = new Image();
+        img.src = preview;
+        img.onload = () => {
+            const { naturalWidth: w, naturalHeight: h } = img;
+            if (h > w) {
+                setPreviewAspect('aspect-[3/4]');
+            } else if (w > h) {
+                setPreviewAspect('aspect-[4/3]');
+            } else {
+                setPreviewAspect('aspect-square');
+            }
+        };
+    }, [preview, aspectRatio]);
+
     // Derive numeric aspect for the crop tool from the aspectRatio Tailwind class
-    const resolvedCropAspect = cropAspect ?? (() => {
+    const resolvedCropAspect = cropAspect === 'dynamic' ? 'dynamic' : (cropAspect ?? (() => {
         if (aspectRatio === 'aspect-square')     return 1;
         if (aspectRatio === 'aspect-video')      return 16 / 9;
         if (aspectRatio === 'aspect-[16/10]')    return 16 / 10;
         if (aspectRatio === 'aspect-[4/3]')      return 4 / 3;
         return undefined; // free crop
-    })();
+    })());
 
     const inputId = `upload-${label?.replace(/\s+/g, '-') ?? Math.random()}`;
     const objectClass = fit === 'contain' ? 'object-contain' : 'object-cover';
@@ -248,7 +287,7 @@ const ImageUploader = ({
                     {preview ? (
                         <div className={cn(
                             'relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100',
-                            aspectRatio
+                            previewAspect
                         )}>
                             <img
                                 src={preview}
@@ -278,7 +317,7 @@ const ImageUploader = ({
                                 'flex flex-col items-center justify-center w-full rounded-xl',
                                 'border-2 border-dashed border-slate-200 bg-slate-50',
                                 'hover:bg-slate-100 hover:border-[#B3925B]/50 cursor-pointer transition-all group',
-                                aspectRatio
+                                previewAspect
                             )}
                         >
                             <div className="flex flex-col items-center justify-center gap-2 p-4">

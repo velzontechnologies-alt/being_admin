@@ -1,13 +1,8 @@
-# .htaccess for React Admin SPA in a subdirectory (/admin/)
-# Note: If you host the admin dashboard on a separate subdomain (e.g. admin.yourdomain.com),
-# change "/admin/" in RewriteBase and RewriteRule to "/" (e.g., RewriteRule . /index.html [L])
-
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /admin/
+  RewriteBase /
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  RewriteRule . /admin/index.html [L]
+  RewriteRule . /index.html [L]
 </IfModule>
