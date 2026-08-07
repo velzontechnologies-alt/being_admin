@@ -607,7 +607,7 @@ const Programs = () => {
                         {/* CTA Footer */}
                         <div className="pt-4 border-t border-[#F0EAE1] flex items-center justify-end">
                             <button type="button" disabled className="bg-[#1E242B] text-white text-[10px] uppercase tracking-[0.2em] py-3.5 px-8 font-semibold rounded-sm opacity-80 cursor-not-allowed">
-                                Enquire for This Container
+                                Enquire
                             </button>
                         </div>
                     </div>
