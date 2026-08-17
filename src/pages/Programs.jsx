@@ -201,8 +201,6 @@ const Programs = () => {
                 showAlert({ title: 'Created!', text: 'New program added successfully', icon: 'success' });
                 fetchPrograms();
             }
-        console.log('Program updated:', submissionData);
-
             setIsModalOpen(false);
         } catch (error) {
             showAlert({ title: 'Error', text: 'Failed to save program', icon: 'error' });

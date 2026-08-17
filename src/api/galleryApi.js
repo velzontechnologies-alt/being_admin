@@ -28,30 +28,67 @@ export const galleryApi = {
         return extractList(res.data);
     },
 
-    create: async ({ file, status }) => {
-        const fd = buildFormData({ ...(status && { status }) });
-        fd.append('file', file);
+    create: async ({ file, sub_image, heading, title, description, status }) => {
+        const fd = buildFormData({
+            heading,
+            title,
+            description,
+            ...(status !== undefined && { status })
+        });
+        if (file instanceof File) {
+            fd.append('file', file);
+        }
+        if (Array.isArray(sub_image)) {
+            sub_image.forEach(item => {
+                if (item instanceof File) {
+                    fd.append('sub_image', item);
+                } else if (typeof item === 'string') {
+                    fd.append('sub_image_urls', item);
+                }
+            });
+        }
         const res = await apiBase.post('/gallery/create', fd, MULTIPART);
         return res.data;
     },
 
-    update: async ({ _id, file, status }) => {
-        // 1. If updating image file, use FormData / multipart request
-        if (file instanceof File) {
+    update: async ({ _id, file, sub_image, heading, title, description, status }) => {
+        const hasFiles = (file instanceof File) || (Array.isArray(sub_image) && sub_image.some(item => item instanceof File));
+
+        if (hasFiles) {
             const fd = buildFormData({
                 _id,
                 id: _id,
+                heading,
+                title,
+                description,
                 ...(status !== undefined && { status })
             });
-            fd.append('file', file);
+            if (file instanceof File) {
+                fd.append('file', file);
+            } else if (typeof file === 'string') {
+                fd.append('image', file);
+            }
+            if (Array.isArray(sub_image)) {
+                sub_image.forEach(item => {
+                    if (item instanceof File) {
+                        fd.append('sub_image', item);
+                    } else if (typeof item === 'string') {
+                        fd.append('sub_image_urls', item);
+                    }
+                });
+            }
             const res = await apiBase.post('/gallery/update', fd, MULTIPART);
             return res.data;
         }
 
-        // 2. If updating status only, send as standard JSON POST request
+        // Standard JSON POST request if no files are uploaded
         const res = await apiBase.post('/gallery/update', {
             _id,
             id: _id,
+            heading,
+            title,
+            description,
+            sub_image, // array of strings (URLs)
             status
         });
         return res.data;
@@ -64,6 +101,15 @@ export const galleryApi = {
 
     details: async (id) => {
         const res = await apiBase.post('/gallery/details', { _id: id });
+        return res.data;
+    },
+
+    addSubImage: async ({ _id, file }) => {
+        const fd = buildFormData({ _id });
+        if (file instanceof File) {
+            fd.append('file', file);
+        }
+        const res = await apiBase.post('/gallery/add/sub/image', fd, MULTIPART);
         return res.data;
     }
 };

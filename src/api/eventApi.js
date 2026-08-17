@@ -98,7 +98,6 @@ export const eventApi = {
 
     bookingList: async () => {
         const res = await apiBase.get('/event/book/list');
-        console.log('bookingList res.data:', res.data);
         return extractList(res.data);
     },
 

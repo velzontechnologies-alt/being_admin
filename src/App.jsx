@@ -4,6 +4,7 @@ import { AuthProvider } from './hooks/useAuth';
 import ProtectedRoute from './routes/ProtectedRoute';
 import AdminLayout from './layouts/AdminLayout';
 import Loader from './components/shared/Loader';
+import { NotificationProvider } from './hooks/useNotifications';
 
 // Lazy load pages
 const Login = lazy(() => import('./pages/Login'));
@@ -21,37 +22,39 @@ const Reservations = lazy(() => import('./pages/Reservations'));
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Loader fullScreen />}>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
+      <NotificationProvider>
+        <Suspense fallback={<Loader fullScreen />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Protected Admin Routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="programs" element={<Programs />} />
-            <Route path="events" element={<Events />} />
-            <Route path="gallery" element={<Gallery />} />
-            <Route path="reviews" element={<Reviews />} />
-            <Route path="reservations" element={<Reservations />} />
-            <Route path="enquiries" element={<Enquiries />} />
-            <Route path="site-images" element={<SiteImages />} />
-            <Route path="admins" element={<Admins />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
+            {/* Protected Admin Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="programs" element={<Programs />} />
+              <Route path="events" element={<Events />} />
+              <Route path="gallery" element={<Gallery />} />
+              <Route path="reviews" element={<Reviews />} />
+              <Route path="reservations" element={<Reservations />} />
+              <Route path="enquiries" element={<Enquiries />} />
+              <Route path="site-images" element={<SiteImages />} />
+              <Route path="admins" element={<Admins />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Suspense>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
+      </NotificationProvider>
     </BrowserRouter>
   );
 }
