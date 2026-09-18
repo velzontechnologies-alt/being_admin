@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.DEV 
-    ? '/api' 
+const BASE_URL = import.meta.env.DEV
+    ? '/api'
     : 'https://api.beingandbeyond.life';
 
 const getToken = () => {

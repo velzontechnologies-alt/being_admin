@@ -20,7 +20,7 @@ const extractUserInfo = (obj) => {
         if ('description' in item && item.description) result.description = item.description;
         if ('bio' in item && item.bio) result.description = item.bio;
         if ('profile_image' in item && item.profile_image) result.profile_image = item.profile_image;
-        
+
         for (const key in item) {
             if (Object.prototype.hasOwnProperty.call(item, key)) {
                 search(item[key]);
@@ -78,9 +78,31 @@ export const authService = {
     },
 
     // POST /admin/create
-    createAdmin: async (email, phone_number, name, password) => {
-        const response = await api.post('/create', { email, phone_number, name, password });
+    createAdmin: async (arg1, phone_number, name, password) => {
+        let payload = {};
+        if (typeof arg1 === 'object' && arg1 !== null) {
+            payload = {
+                name: arg1.name || '',
+                email: arg1.email || '',
+                password: arg1.password || '',
+                phone_number: arg1.phone_number || arg1.phone || '',
+            };
+        } else {
+            // Positional arguments compatibility: (email, phone_number, name, password)
+            payload = {
+                name: name || '',
+                email: arg1 || '',
+                password: password || '',
+                phone_number: phone_number || '',
+            };
+        }
+        const response = await api.post('/create', payload);
         return response.data;
+    },
+
+    // Alias for admin registration
+    register: async (adminData) => {
+        return authService.createAdmin(adminData);
     },
 
     // POST /admin/update — fields must match adminSchema: name, phone_number, description

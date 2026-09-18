@@ -8,6 +8,7 @@ import { NotificationProvider } from './hooks/useNotifications';
 
 // Lazy load pages
 const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Events = lazy(() => import('./pages/Events'));
 const Programs = lazy(() => import('./pages/Programs'));
@@ -27,6 +28,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Protected Admin Routes */}
             <Route
