@@ -24,6 +24,12 @@ const addAuthInterceptor = (instance) => {
                 // Always inject into headers
                 config.headers['Token'] = token;
                 config.headers['Authorization'] = `Bearer ${token}`;
+                // Inject into FormData bodies if present
+                if (config.data instanceof FormData && typeof config.data.append === 'function') {
+                    if (typeof config.data.has === 'function' ? !config.data.has('Token') : true) {
+                        config.data.append('Token', token);
+                    }
+                }
             }
             return config;
         },

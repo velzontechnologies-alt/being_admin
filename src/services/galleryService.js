@@ -31,13 +31,30 @@ const normalise = (item) => {
         }
     }
 
+    let subImages = [];
+    const rawSub = item.sub_image || item.sub_images || item.subImage || item.subImages || item.sub_image_urls;
+    if (Array.isArray(rawSub)) {
+        subImages = rawSub.map(s => typeof s === 'string' ? s : (s?.url || s?.image || s?.src || '')).filter(Boolean);
+    } else if (typeof rawSub === 'string' && rawSub.trim()) {
+        try {
+            const parsed = JSON.parse(rawSub);
+            if (Array.isArray(parsed)) {
+                subImages = parsed.map(s => typeof s === 'string' ? s : (s?.url || s?.image || s?.src || '')).filter(Boolean);
+            } else {
+                subImages = rawSub.split(',').map(s => s.trim()).filter(Boolean);
+            }
+        } catch {
+            subImages = rawSub.split(',').map(s => s.trim()).filter(Boolean);
+        }
+    }
+
     return {
         id:  item._id  || item.id,
         src: item.image || item.file || item.src || item.url || '',
         heading,
         title,
         description,
-        sub_image: Array.isArray(item.sub_image) ? item.sub_image : [],
+        sub_image: subImages,
         status
     };
 };
@@ -77,5 +94,9 @@ export const galleryService = {
     details: async (id) => galleryApi.details(id),
 
     // Add single sub-image to event
-    addSubImage: async (id, file) => galleryApi.addSubImage({ _id: id, file })
+    addSubImage: async (id, file) => galleryApi.addSubImage({ _id: id, file }),
+
+    // Remove single sub-image from event
+    removeSubImage: async (id, subImage, token) => galleryApi.removeSubImage({ _id: id, sub_image: subImage, token })
 };
+

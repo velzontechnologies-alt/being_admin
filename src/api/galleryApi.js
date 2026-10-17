@@ -8,11 +8,12 @@
  *   POST /gallery/create         Token, file, optional status
  *   POST /gallery/update         Token, _id, file, optional status
  *   POST /gallery/delete         Token, _id
- *   POST /gallery/details        Token, _id
+ *   POST /gallery/add/sub/image    Token, _id, file
+ *   POST /gallery/remove/sub/image Token, _id, sub_image
  *
  *  NOTE: Token is injected automatically by axiosInstance.js interceptor.
  */
-import { apiBase } from '../services/axiosInstance';
+import { apiBase, getToken } from '../services/axiosInstance';
 import { buildFormData, extractList, MULTIPART } from './http';
 
 export const galleryApi = {
@@ -51,7 +52,7 @@ export const galleryApi = {
         return res.data;
     },
 
-    update: async ({ _id, file, sub_image, heading, title, description, status }) => {
+    update: async ({ _id, file, image, sub_image, heading, title, description, status, remove_image }) => {
         const hasFiles = (file instanceof File) || (Array.isArray(sub_image) && sub_image.some(item => item instanceof File));
 
         if (hasFiles) {
@@ -61,6 +62,8 @@ export const galleryApi = {
                 heading,
                 title,
                 description,
+                image: typeof image === 'string' ? image : '',
+                ...(remove_image ? { remove_image: 'true', remove_main_image: 'true' } : {}),
                 ...(status !== undefined && { status })
             });
             if (file instanceof File) {
@@ -73,6 +76,7 @@ export const galleryApi = {
                     if (item instanceof File) {
                         fd.append('sub_image', item);
                     } else if (typeof item === 'string') {
+                        fd.append('sub_image', item);
                         fd.append('sub_image_urls', item);
                     }
                 });
@@ -82,20 +86,25 @@ export const galleryApi = {
         }
 
         // Standard JSON POST request if no files are uploaded
-        const res = await apiBase.post('/gallery/update', {
+        const jsonPayload = {
             _id,
             id: _id,
             heading,
             title,
             description,
-            sub_image, // array of strings (URLs)
-            status
-        });
+            image: typeof image === 'string' ? image : (typeof file === 'string' ? file : ''),
+            img: typeof image === 'string' ? image : (typeof file === 'string' ? file : ''),
+            file: '',
+            sub_image: Array.isArray(sub_image) ? sub_image : [],
+            status,
+            ...(remove_image ? { remove_image: true, remove_main_image: true } : {})
+        };
+        const res = await apiBase.post('/gallery/update', jsonPayload);
         return res.data;
     },
 
     delete: async (id) => {
-        const res = await apiBase.post('/gallery/delete', { _id: id });
+        const res = await apiBase.post('/gallery/delete', { _id: id, id: id });
         return res.data;
     },
 
@@ -110,6 +119,21 @@ export const galleryApi = {
             fd.append('file', file);
         }
         const res = await apiBase.post('/gallery/add/sub/image', fd, MULTIPART);
+        return res.data;
+    },
+
+    removeSubImage: async ({ _id, id, sub_image, token }) => {
+        const docId = _id || id;
+        const authToken = token || getToken();
+        if (!authToken) {
+            throw new Error('Authentication token is required. Please log in.');
+        }
+
+        const res = await apiBase.post('/gallery/remove/sub/image', {
+            _id: docId,
+            sub_image,
+            token: authToken
+        });
         return res.data;
     }
 };

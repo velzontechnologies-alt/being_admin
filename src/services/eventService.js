@@ -53,7 +53,8 @@ export const eventService = {
             end_time:    data.end_time,
             location:    data.location || '',
             status:      data.status !== undefined ? data.status : true,
-            file:        data.img instanceof File ? data.img : undefined
+            file:        data.img instanceof File ? data.img : undefined,
+            remove_image: data.remove_image
         });
     },
 
@@ -63,8 +64,28 @@ export const eventService = {
         return eventApi.delete(id);
     },
 
-    // Upload cover image for an event
+    // Upload cover image for an event safely preserving existing event details
     uploadImage: async (id, file) => {
+        try {
+            const raw = await eventApi.list();
+            const existing = raw.find(e => (e._id || e.id) === id);
+            if (existing) {
+                return eventApi.update({
+                    _id:         existing._id || existing.id,
+                    title:       existing.title,
+                    description: existing.description,
+                    start_date:  existing.start_date,
+                    end_date:    existing.end_date,
+                    start_time:  existing.start_time,
+                    end_time:    existing.end_time,
+                    location:    existing.location,
+                    status:      existing.status,
+                    file
+                });
+            }
+        } catch {
+            // fallback to updateImage
+        }
         return eventApi.updateImage({ _id: id, file });
     },
 

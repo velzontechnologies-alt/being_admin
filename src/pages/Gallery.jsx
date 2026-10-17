@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Image as ImageIcon, Search, Eye, RefreshCw, FileText, UploadCloud, X as XIcon, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Image as ImageIcon, Search, Eye, RefreshCw, FileText, UploadCloud, X as XIcon, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import { Table, TableRow, TableCell } from '../components/ui/Table';
 import Button from '../components/ui/Button';
@@ -154,6 +154,7 @@ const Gallery = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFilterEventId, setSelectedFilterEventId] = useState(queryEventId);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingEventRef, setEditingEventRef] = useState('');
     const [formData, setFormData] = useState({
         eventRef: '',
         title: '',
@@ -355,6 +356,7 @@ const Gallery = () => {
     const dropZoneRef = useRef(null);
 
     const handleOpenModal = (presetEventRef = '') => {
+        setEditingEventRef(presetEventRef || '');
         // Only load existing data if a specific event reference is provided
         const existing = presetEventRef ? images.find(item => item.heading === presetEventRef) : null;
         const defaults = presetEventRef ? DEFAULT_EVENTS.find(e => e.eventRef === presetEventRef) : null;
@@ -449,10 +451,50 @@ const Gallery = () => {
     };
 
 
-    const handleRemoveExistingImage = (imgId) => {
+    const handleRemoveExistingImage = async (imgOrId) => {
+        const imgId = typeof imgOrId === 'string' ? imgOrId : imgOrId?.id;
+        const targetItem = modalImages.find(img => img.id === imgId) || (typeof imgOrId === 'object' ? imgOrId : null);
+        const eventDoc = images.find(img => img.heading === formData.eventRef);
+
+        // If removing an existing sub-image on an existing event, remove from server
+        if (targetItem?.isExisting && !targetItem?.isMain && eventDoc?.id) {
+            const confirmed = await confirmDialog({
+                title: 'Remove Sub-Image?',
+                text: 'Are you sure you want to remove this sub-image from the server? This action cannot be undone.'
+            });
+            if (!confirmed) return;
+
+            try {
+                setSaving(true);
+                await galleryService.removeSubImage(eventDoc.id, targetItem.src);
+                showAlert({ title: 'Removed!', text: 'Sub-image removed successfully.', icon: 'success' });
+
+                setModalImages(prev => {
+                    const remaining = prev.filter(img => img.id !== imgId);
+                    if (activeId === imgId) {
+                        setActiveId(remaining.length > 0 ? remaining[0].id : null);
+                    }
+                    return remaining;
+                });
+                await fetchGallery();
+                return;
+            } catch (err) {
+                console.error("Failed to remove sub-image:", err);
+                showAlert({ title: 'Error', text: err?.response?.data?.message || err.message || 'Failed to remove sub-image.', icon: 'error' });
+                return;
+            } finally {
+                setSaving(false);
+            }
+        }
+
+        // For local / staged files or main image
         setModalImages(prev => {
+            const deletedItem = prev.find(img => img.id === imgId);
+            if (deletedItem && !deletedItem.isExisting && deletedItem.src) {
+                URL.revokeObjectURL(deletedItem.src);
+            }
             const remaining = prev.filter(img => img.id !== imgId);
-            const wasMain = prev.find(img => img.id === imgId)?.isMain;
+            const wasMain = deletedItem?.isMain;
             if (wasMain && remaining.length > 0) {
                 remaining[0].isMain = true;
             }
@@ -576,26 +618,12 @@ const Gallery = () => {
         })));
     };
 
-    const handleDeleteActive = () => {
-        setModalImages(prev => {
-            const remaining = prev.filter(img => img.id !== activeId);
-            const wasMain = prev.find(img => img.id === activeId)?.isMain;
-            if (wasMain && remaining.length > 0) {
-                remaining[0].isMain = true;
-            }
-
-            const deletedItem = prev.find(img => img.id === activeId);
-            if (deletedItem && !deletedItem.isExisting) {
-                URL.revokeObjectURL(deletedItem.src);
-            }
-
-            if (remaining.length > 0) {
-                setActiveId(remaining[0].id);
-            } else {
-                setActiveId(null);
-            }
-            return remaining;
-        });
+    const handleDeleteActive = async () => {
+        if (!activeId) return;
+        const activeImg = modalImages.find(img => img.id === activeId);
+        if (activeImg) {
+            await handleRemoveExistingImage(activeImg);
+        }
     };
 
     const handleDelete = async (flatImg) => {
@@ -616,6 +644,31 @@ const Gallery = () => {
         }
     };
 
+    // Duplicate detection for event reference and title
+    const trimmedEventRef = (formData.eventRef || '').trim();
+    const isDuplicateEventRef = Boolean(
+        trimmedEventRef &&
+        (
+            availableEvents.some(evt => {
+                const isSelf = editingEventRef && evt.trim().toLowerCase() === editingEventRef.trim().toLowerCase();
+                return !isSelf && evt.trim().toLowerCase() === trimmedEventRef.toLowerCase();
+            }) ||
+            images.some(img => {
+                const isSelf = editingEventRef && img.heading && img.heading.trim().toLowerCase() === editingEventRef.trim().toLowerCase();
+                return !isSelf && img.heading && img.heading.trim().toLowerCase() === trimmedEventRef.toLowerCase();
+            })
+        )
+    );
+
+    const trimmedTitle = (formData.title || '').trim();
+    const isDuplicateTitle = Boolean(
+        trimmedTitle &&
+        images.some(img => {
+            const isSelf = editingEventRef && img.heading && img.heading.trim().toLowerCase() === editingEventRef.trim().toLowerCase();
+            return !isSelf && img.title && img.title.trim().toLowerCase() === trimmedTitle.toLowerCase();
+        })
+    );
+
     const handleSave = async (e) => {
         e.preventDefault();
 
@@ -624,10 +677,21 @@ const Gallery = () => {
             return;
         }
 
+        if (isDuplicateEventRef) {
+            showAlert({
+                title: 'Duplicate Event Name',
+                text: `An event with the name "${trimmedEventRef}" already exists. Each event in the gallery must have a unique reference name.`,
+                icon: 'warning'
+            });
+            return;
+        }
+
         setSaving(true);
 
         try {
-            const existingDoc = images.find(img => img.heading === formData.eventRef);
+            const existingDoc = editingEventRef
+                ? images.find(img => img.heading === editingEventRef)
+                : images.find(img => img.heading === formData.eventRef);
 
             const mainItem = modalImages.find(img => img.isMain);
             const subItems = modalImages.filter(img => !img.isMain);
@@ -643,10 +707,25 @@ const Gallery = () => {
                 }
             }
 
-            // 1. If existing event, upload new sub-images sequentially in save process
+            // 1. If existing event, sync sub-images (remove deleted, upload new)
             let uploadedSubImagesList = subItems.filter(item => item.isExisting).map(item => item.src);
 
             if (existingDoc) {
+                // Ensure any original sub-images removed from modal are purged from server
+                const currentKeptUrls = new Set(
+                    subItems.filter(item => item.isExisting).map(item => item.src)
+                );
+                const originalServerUrls = Array.isArray(existingDoc.sub_image) ? existingDoc.sub_image : [];
+                const urlsToRemove = originalServerUrls.filter(url => !currentKeptUrls.has(url));
+
+                for (const remUrl of urlsToRemove) {
+                    try {
+                        await galleryService.removeSubImage(existingDoc.id, remUrl);
+                    } catch (err) {
+                        console.warn("Sub-image already removed or failed removal:", remUrl, err);
+                    }
+                }
+
                 const newSubItems = subItems.filter(item => !item.isExisting);
                 if (newSubItems.length > 0) {
                     const total = newSubItems.length;
@@ -661,7 +740,14 @@ const Gallery = () => {
                     // Fetch updated details from server to sync the new sub-image URLs
                     const detailsRes = await galleryService.details(existingDoc.id);
                     const serverDoc = detailsRes.data || detailsRes;
-                    uploadedSubImagesList = serverDoc.sub_image || [];
+                    const serverSubImages = Array.isArray(serverDoc.sub_image) ? serverDoc.sub_image : [];
+                    const keptExistingUrls = new Set(subItems.filter(item => item.isExisting).map(item => item.src));
+                    const previousDocUrls = new Set(Array.isArray(existingDoc.sub_image) ? existingDoc.sub_image : []);
+                    const newlyAddedOnServer = serverSubImages.filter(url => !previousDocUrls.has(url));
+                    uploadedSubImagesList = [
+                        ...serverSubImages.filter(url => keptExistingUrls.has(url)),
+                        ...newlyAddedOnServer
+                    ];
                 }
             } else {
                 // For new events, we restrict uploads to main image only at creation
@@ -674,12 +760,10 @@ const Gallery = () => {
                 title: formData.title || '',
                 description: formData.description || '',
                 status: true,
-                sub_image: uploadedSubImagesList
+                sub_image: uploadedSubImagesList,
+                image: finalMainImage || '',
+                ...(finalMainImage ? {} : { remove_image: true })
             };
-
-            if (finalMainImage) {
-                payload.image = finalMainImage;
-            }
 
             if (existingDoc) {
                 await galleryService.update(existingDoc.id, finalMainFile, payload);
@@ -690,6 +774,7 @@ const Gallery = () => {
             showAlert({ title: 'Saved!', text: 'Event saved successfully.', icon: 'success' });
             fetchGallery();
             setIsModalOpen(false);
+            setEditingEventRef('');
         } catch (error) {
             console.error("Saving event failed", error);
             showAlert({ title: 'Error', text: 'Failed to save event.', icon: 'error' });
@@ -729,26 +814,66 @@ const Gallery = () => {
                         {!loading && <RefreshCw className="h-4 w-4 text-[#B3925B]" />}
                         Refresh
                     </Button>
-                    {activeTab === 'images' && (
-                        <div className="flex gap-2">
-                            <Button
-                                onClick={handleOpenShowcaseModal}
-                                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 hover:border-emerald-700 font-semibold"
-                            >
-                                <Plus className="h-4 w-4" /> Upload Gallery Image
-                            </Button>
+                    <div className="flex gap-2">
+                        {activeTab === 'images' ? (
+                            <>
+                                <Button
+                                    onClick={handleOpenShowcaseModal}
+                                    className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 hover:border-emerald-700 font-semibold"
+                                >
+                                    <Plus className="h-4 w-4" /> Upload Gallery Image
+                                </Button>
+                                <Button
+                                    onClick={() => handleOpenModal('')}
+                                    className="gap-2"
+                                >
+                                    <Plus className="h-4 w-4" /> Upload Event Images
+                                </Button>
+                            </>
+                        ) : (
                             <Button
                                 onClick={() => handleOpenModal('')}
                                 className="gap-2"
                             >
-                                <Plus className="h-4 w-4" /> Upload Event Images
+                                <Plus className="h-4 w-4" /> Add Event Highlight
                             </Button>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 
-
+            {/* Tab navigation */}
+            <div className="flex border-b border-slate-200 gap-6">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('images')}
+                    className={`pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2 ${activeTab === 'images'
+                            ? 'text-[#B3925B]'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                >
+                    <ImageIcon className="h-4 w-4" />
+                    Gallery Images Table
+                    {activeTab === 'images' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#B3925B]" />
+                    )}
+                </button>
+                {/* <button
+                    type="button"
+                    onClick={() => setActiveTab('events')}
+                    className={`pb-3 text-sm font-semibold transition-colors relative flex items-center gap-2 ${
+                        activeTab === 'events'
+                            ? 'text-[#B3925B]'
+                            : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                >
+                    <FileText className="h-4 w-4" />
+                    Event Highlights & Showcase
+                    {activeTab === 'events' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#B3925B]" />
+                    )}
+                </button> */}
+            </div>
 
             {activeTab === 'events' ? (
                 <div className="grid grid-cols-1 gap-10 animate-in fade-in duration-300">
@@ -1020,7 +1145,7 @@ const Gallery = () => {
             {/* Gallery Upload Modal — Unified Event + Images (E-commerce Style) */}
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => { if (!saving) setIsModalOpen(false); }}
+                onClose={() => { if (!saving) { setIsModalOpen(false); setEditingEventRef(''); } }}
                 title={formData.eventRef ? `Manage ${formData.eventRef}` : 'Add Event to Gallery'}
                 className="max-w-4xl"
                 footer={
@@ -1033,8 +1158,13 @@ const Gallery = () => {
                                     : 'Fill in event details and add images'}
                         </span>
                         <div className="flex gap-2">
-                            <Button variant="secondary" onClick={() => setIsModalOpen(false)} disabled={saving}>Cancel</Button>
-                            <Button onClick={handleSave} isLoading={saving}>
+                            <Button variant="secondary" onClick={() => { setIsModalOpen(false); setEditingEventRef(''); }} disabled={saving}>Cancel</Button>
+                            <Button
+                                onClick={handleSave}
+                                isLoading={saving}
+                                disabled={saving || isDuplicateEventRef}
+                                title={isDuplicateEventRef ? 'Cannot save: event name already exists' : ''}
+                            >
                                 Save Event Details
                             </Button>
                         </div>
@@ -1043,22 +1173,53 @@ const Gallery = () => {
             >
                 <div className="space-y-6">
 
+                    {/* Duplicate Event Name Warning Banner */}
+                    {isDuplicateEventRef && (
+                        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-xs animate-in fade-in duration-200">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold text-amber-900">Duplicate Event Name Detected</p>
+                                <p className="text-amber-700 mt-0.5">
+                                    An event named &ldquo;<span className="font-semibold">{trimmedEventRef}</span>&rdquo; is already present in the gallery. Each event must have a unique reference name to avoid overwriting existing gallery data.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* ── SECTION 1: Event Heading ── */}
                     <div className="pb-5 border-b border-slate-100 space-y-4">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-[#B3925B]">Event Heading</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Input
-                                label="Event Reference Label"
-                                placeholder="e.g. Event 1, Event 2"
-                                value={formData.eventRef}
-                                onChange={(e) => setFormData(prev => ({ ...prev, eventRef: e.target.value }))}
-                            />
-                            <Input
-                                label="Event Title"
-                                placeholder="e.g. Figure to Future™ Session for Rotary Club"
-                                value={formData.title}
-                                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                            />
+                            <div>
+                                <Input
+                                    label="Event Reference Label"
+                                    placeholder="e.g. Event 1, Event 2"
+                                    value={formData.eventRef}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, eventRef: e.target.value }))}
+                                    className={isDuplicateEventRef ? 'border-amber-400 focus-visible:ring-amber-400 bg-amber-50/20' : ''}
+                                />
+                                {isDuplicateEventRef && (
+                                    <p className="text-[11px] text-amber-600 font-medium flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200">
+                                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                                        Event name &quot;{trimmedEventRef}&quot; is already in use. Please enter a unique name.
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <Input
+                                    label="Event Title"
+                                    placeholder="e.g. Figure to Future™ Session for Rotary Club"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                    className={isDuplicateTitle ? 'border-amber-400 focus-visible:ring-amber-400 bg-amber-50/20' : ''}
+                                />
+                                {isDuplicateTitle && (
+                                    <p className="text-[11px] text-amber-600 font-medium flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200">
+                                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                                        An event with this title already exists.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -1134,7 +1295,7 @@ const Gallery = () => {
                                         <div
                                             key={img.id}
                                             onClick={() => setActiveId(img.id)}
-                                            className={`relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${img.id === activeId
+                                            className={`relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all group ${img.id === activeId
                                                 ? 'border-[#B3925B] ring-2 ring-[#B3925B]/20 scale-95 shadow-md'
                                                 : 'border-slate-200 hover:border-slate-300'
                                                 }`}
@@ -1145,6 +1306,17 @@ const Gallery = () => {
                                                     Main
                                                 </div>
                                             )}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRemoveExistingImage(img);
+                                                }}
+                                                className="absolute top-1 right-1 p-1 rounded-full bg-red-600/90 hover:bg-red-700 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                title="Remove Image"
+                                            >
+                                                <XIcon className="h-2.5 w-2.5" />
+                                            </button>
                                         </div>
                                     ))}
 
@@ -1274,7 +1446,7 @@ const Gallery = () => {
                                         <div
                                             key={idx}
                                             onClick={() => setActivePreviewSrc(url)}
-                                            className={`relative w-20 h-14 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${activePreviewSrc === url
+                                            className={`relative group w-20 h-14 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${activePreviewSrc === url
                                                 ? 'border-[#B3925B] ring-2 ring-[#B3925B]/20 scale-95 shadow-md'
                                                 : 'border-slate-200 hover:border-slate-300'
                                                 }`}
@@ -1283,6 +1455,36 @@ const Gallery = () => {
                                             <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] text-center font-bold py-0.5 uppercase tracking-wide">
                                                 Sub {idx + 1}
                                             </div>
+                                            <button
+                                                type="button"
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    const confirmed = await confirmDialog({
+                                                        title: 'Remove Sub-Image?',
+                                                        text: `Are you sure you want to remove Sub-Image ${idx + 1} from this event?`
+                                                    });
+                                                    if (!confirmed) return;
+                                                    try {
+                                                        await galleryService.removeSubImage(selectedImage.id, url);
+                                                        showAlert({ title: 'Removed!', text: 'Sub-image removed successfully.', icon: 'success' });
+                                                        setSelectedImage(prev => {
+                                                            const newSubs = (prev.sub_image || []).filter(u => u !== url);
+                                                            return { ...prev, sub_image: newSubs };
+                                                        });
+                                                        if (activePreviewSrc === url) {
+                                                            setActivePreviewSrc(selectedImage.src || '');
+                                                        }
+                                                        fetchGallery();
+                                                    } catch (err) {
+                                                        console.error("Failed to remove sub-image:", err);
+                                                        showAlert({ title: 'Error', text: err?.response?.data?.message || err.message || 'Failed to remove sub-image.', icon: 'error' });
+                                                    }
+                                                }}
+                                                className="absolute top-1 right-1 p-1 rounded-full bg-red-600/90 hover:bg-red-700 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                                                title="Remove Sub-Image"
+                                            >
+                                                <Trash2 className="h-2.5 w-2.5" />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

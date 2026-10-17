@@ -91,7 +91,7 @@ const normaliseProgram = (p) => {
         suitableFor: (isYouth || isCorporate) ? suitableList : [],
         
         keyOutcome:  p.key_out_come     || '',
-        img:         p.card_image || p.image || p.file || p.url || '',
+        img:         p.card_image || p.image || p.file || p.url || p.img || '',
         status:      p.card_status !== undefined ? Boolean(p.card_status) : true
     };
 };
@@ -132,13 +132,36 @@ export const programService = {
             what_you_gain:    Array.isArray(data.gains) ? data.gains.join('\n') : (data.what_you_gain || ''),
             suitable:         Array.isArray(data.suitableFor) ? data.suitableFor.join('\n') : (data.suitable || ''),
             tagline:          data.outcome || data.tagline || '',
-            key_out_come:     data.keyOutcome || data.key_out_come || ''
+            key_out_come:     data.keyOutcome || data.key_out_come || '',
+            remove_image:     data.remove_image
         });
     },
 
     /** Delete a program by _id. */
     delete: async (id) => imageApi.delete(id),
 
-    /** Upload/replace only the image for a program. */
-    uploadImage: async (id, file) => imageApi.updateImage({ _id: id, file })
+    /** Upload/replace only the image for a program safely preserving existing fields. */
+    uploadImage: async (id, file) => {
+        try {
+            const items = await imageApi.list();
+            const existing = items.find(item => (item._id || item.id) === id);
+            if (existing) {
+                return imageApi.update({
+                    _id:              existing._id || existing.id,
+                    file,
+                    card_title:       existing.card_title,
+                    card_description: existing.card_description,
+                    card_status:      existing.card_status,
+                    ideal:            existing.ideal,
+                    what_you_gain:    existing.what_you_gain,
+                    suitable:         existing.suitable,
+                    tagline:          existing.tagline,
+                    key_out_come:     existing.key_out_come
+                });
+            }
+        } catch {
+            // fallback to updateImage
+        }
+        return imageApi.updateImage({ _id: id, file });
+    }
 };
