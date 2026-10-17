@@ -29,14 +29,17 @@ export const imageApi = {
 
     create: async ({ file, card_title, card_description, card_status = true, ideal, what_you_gain, suitable, tagline, key_out_come }) => {
         const fd = buildFormData({ 
-            card_title, 
+            card_title,
+            title: card_title,
             card_description, 
             description: card_description, 
-            card_status, 
+            card_status,
+            status: card_status,
             ideal, 
             what_you_gain, 
             suitable, 
-            tagline, 
+            tagline,
+            outcome: tagline,
             key_out_come 
         });
         if (file instanceof File) fd.append('file', file);
@@ -44,25 +47,56 @@ export const imageApi = {
         return res.data;
     },
 
-    update: async ({ _id, file, card_title, card_description, card_status, ideal, what_you_gain, suitable, tagline, key_out_come }) => {
-        const fd = buildFormData({
+    update: async ({ _id, file, card_title, card_description, card_status, ideal, what_you_gain, suitable, tagline, key_out_come, remove_image }) => {
+        if (file instanceof File) {
+            const fd = buildFormData({
+                _id,
+                id: _id,
+                ...(card_title       !== undefined && { card_title, title: card_title }),
+                ...(card_description !== undefined && { card_description, description: card_description }),
+                ...(card_status      !== undefined && { card_status, status: card_status }),
+                ...(ideal            !== undefined && { ideal }),
+                ...(what_you_gain    !== undefined && { what_you_gain }),
+                ...(suitable         !== undefined && { suitable }),
+                ...(tagline          !== undefined && { tagline, outcome: tagline }),
+                ...(key_out_come     !== undefined && { key_out_come }),
+                ...(remove_image ? {
+                    remove_image: 'true',
+                    card_image: '',
+                    image: '',
+                    file: ''
+                } : {})
+            });
+            fd.append('file', file);
+            const res = await apiBase.post('/program/update', fd, MULTIPART);
+            return res.data;
+        }
+
+        // Standard JSON POST request if no file is being uploaded
+        const jsonPayload = {
             _id,
-            ...(card_title       !== undefined && { card_title }),
+            id: _id,
+            ...(card_title       !== undefined && { card_title, title: card_title }),
             ...(card_description !== undefined && { card_description, description: card_description }),
-            ...(card_status      !== undefined && { card_status }),
+            ...(card_status      !== undefined && { card_status, status: card_status }),
             ...(ideal            !== undefined && { ideal }),
             ...(what_you_gain    !== undefined && { what_you_gain }),
             ...(suitable         !== undefined && { suitable }),
-            ...(tagline          !== undefined && { tagline }),
-            ...(key_out_come     !== undefined && { key_out_come })
-        });
-        if (file instanceof File) fd.append('file', file);
-        const res = await apiBase.post('/program/update', fd, MULTIPART);
+            ...(tagline          !== undefined && { tagline, outcome: tagline }),
+            ...(key_out_come     !== undefined && { key_out_come }),
+            ...(remove_image ? {
+                remove_image: true,
+                card_image: '',
+                image: '',
+                file: ''
+            } : {})
+        };
+        const res = await apiBase.post('/program/update', jsonPayload);
         return res.data;
     },
 
     updateImage: async ({ _id, file }) => {
-        const fd = buildFormData({ _id });
+        const fd = buildFormData({ _id, id: _id });
         if (file instanceof File) fd.append('file', file);
         const res = await apiBase.post('/program/update', fd, MULTIPART);
         return res.data;
@@ -70,7 +104,7 @@ export const imageApi = {
 
     delete: async (id) => {
         // Token is injected automatically via the Axios interceptor (header + FormData)
-        const res = await apiBase.post('/program/delete', { _id: id });
+        const res = await apiBase.post('/program/delete', { _id: id, id: id });
         return res.data;
     },
 

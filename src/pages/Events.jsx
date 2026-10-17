@@ -110,20 +110,9 @@ const Events = () => {
         }
     };
 
-    const handleImageChange = async (file, url) => {
+    const handleImageChange = (file, url) => {
         setFormData(prev => ({ ...prev, img: file }));
         setPreviewUrl(url);
-
-        // Auto-upload if editing existing event
-        if (currentEvent && file instanceof File) {
-            try {
-                await eventService.uploadImage(currentEvent.id, file);
-                showAlert({ title: 'Success!', text: 'Image uploaded automatically', icon: 'success' });
-                fetchEvents();
-            } catch (error) {
-                showAlert({ title: 'Upload Failed', text: 'Could not upload the new image', icon: 'error' });
-            }
-        }
     };
 
     const handleDelete = async (id) => {
@@ -161,7 +150,12 @@ const Events = () => {
 
         try {
             if (currentEvent) {
-                await eventService.update({ ...submissionData, _id: currentEvent.id });
+                await eventService.update({
+                    ...submissionData,
+                    id: currentEvent.id,
+                    _id: currentEvent.id,
+                    remove_image: !formData.img && !previewUrl && Boolean(currentEvent.img)
+                });
                 showAlert({ title: 'Updated!', text: 'Event details updated successfully', icon: 'success' });
             } else {
                 await eventService.create(submissionData);
@@ -170,7 +164,8 @@ const Events = () => {
             fetchEvents();
             setIsModalOpen(false);
         } catch (error) {
-            showAlert({ title: 'Error', text: 'Failed to save event', icon: 'error' });
+            console.error("Failed to save event", error);
+            showAlert({ title: 'Error', text: 'Failed to save event. Please check required fields.', icon: 'error' });
         } finally {
             setSaving(false);
         }

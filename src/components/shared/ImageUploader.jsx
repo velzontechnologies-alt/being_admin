@@ -258,7 +258,11 @@ const ImageUploader = ({
         setPendingFile(null);
     };
 
-    const clearImage = () => {
+    const clearImage = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         setPreview(null);
         if (onImageChange) onImageChange(null, null);
     };
@@ -303,6 +307,7 @@ const ImageUploader = ({
                                     <Crop className="h-3.5 w-3.5" /> Change & Crop
                                 </label>
                                 <button
+                                    type="button"
                                     onClick={clearImage}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-md transition-colors"
                                 >
