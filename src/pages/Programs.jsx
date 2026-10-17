@@ -70,7 +70,7 @@ const Programs = () => {
                 topics: p.topics || [],
                 suitableFor: p.suitableFor || [],
                 keyOutcome: p.keyOutcome || '',
-                img: p.img || p.main_image || '',
+                img: p.img || p.card_image || p.image || p.file || p.url || p.main_image || '',
                 status: p.status !== undefined ? Boolean(p.status) : true
             })));
         } catch (error) {
@@ -133,19 +133,9 @@ const Programs = () => {
         }
     };
 
-    const handleImageChange = async (file, url) => {
+    const handleImageChange = (file, url) => {
         setFormData(prev => ({ ...prev, img: file }));
         setPreviewUrl(url);
-
-        if (currentProgram && file instanceof File) {
-            try {
-                await programService.uploadImage(currentProgram.id, file);
-                showAlert({ title: 'Success!', text: 'Image uploaded automatically', icon: 'success' });
-                fetchPrograms();
-            } catch (error) {
-                showAlert({ title: 'Upload Failed', text: 'Could not upload the program image', icon: 'error' });
-            }
-        }
     };
 
     const handleDelete = async (id) => {
@@ -179,31 +169,30 @@ const Programs = () => {
             what_you_gain: formData.what_you_gain,
             suitable: formData.suitable,
             key_out_come: formData.key_out_come,
-            idealFor: formData.ideal.split('\n').map(l => l.trim()).filter(Boolean),
-            gains: formData.what_you_gain.split('\n').map(l => l.trim()).filter(Boolean),
-            suitableFor: formData.suitable.split('\n').map(l => l.trim()).filter(Boolean),
+            idealFor: formData.ideal ? formData.ideal.split('\n').map(l => l.trim()).filter(Boolean) : [],
+            gains: formData.what_you_gain ? formData.what_you_gain.split('\n').map(l => l.trim()).filter(Boolean) : [],
+            suitableFor: formData.suitable ? formData.suitable.split('\n').map(l => l.trim()).filter(Boolean) : [],
             keyOutcome: formData.key_out_come
         };
-        
 
         try {
             if (currentProgram) {
                 await programService.update({
                     ...submissionData,
                     id: currentProgram.id,
-                    _id: currentProgram.id
+                    _id: currentProgram.id,
+                    remove_image: !formData.img && !previewUrl && Boolean(currentProgram.img)
                 });
                 showAlert({ title: 'Updated!', text: 'Program details updated successfully', icon: 'success' });
-                
-                fetchPrograms();
             } else {
                 await programService.create(submissionData);
                 showAlert({ title: 'Created!', text: 'New program added successfully', icon: 'success' });
-                fetchPrograms();
             }
+            fetchPrograms();
             setIsModalOpen(false);
         } catch (error) {
-            showAlert({ title: 'Error', text: 'Failed to save program', icon: 'error' });
+            console.error("Failed to save program", error);
+            showAlert({ title: 'Error', text: 'Failed to save program. Please check required fields.', icon: 'error' });
         } finally {
             setSaving(false);
         }
